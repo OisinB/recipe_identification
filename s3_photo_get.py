@@ -24,8 +24,7 @@ else:
     photo_file, dest_fldr, region = sys.argv[1:]
 
 s3 = boto3.resource('s3', region_name='us-east-1',
-                    aws_access_key_id='AKIAJCOQL5GZQUHJ4BGQ',
-                    aws_secret_access_key='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')
+                   )
 tofu = s3.Bucket('tofu.us-east-1')
 
 if photo_file.split('.')[1] == 'csv':    
