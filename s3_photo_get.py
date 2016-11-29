@@ -7,9 +7,14 @@ Created on Thu Nov 24 14:45:24 2016
 
 Get recipe photos from s3 storge
 photo_file should be filepath to a .csv file of image ids from the recipe table
+    OR it can be an sql queru file, assmuning you have a local copy of the db
 dest_fldr is where you want the photos to end up
-
 Default region is 1 for English
+Default s3_folder is recipes. Other values might be photo_reports
+
+NB for sql: the sql query assumes you're using the global_development db.
+If you need to use tables in other dbs (e.g. global_stats_devleopment for 
+keywords from search), make sure to speficiy such in your query
 """
 
 import sys
@@ -20,11 +25,17 @@ from threading import Thread
 if len(sys.argv) == 3:
     photo_file, dest_fldr = sys.argv[1:]
     region = 1
-else:
+    s3_folder = 'recipes'
+elif len(sys.argv) == 4:
     photo_file, dest_fldr, region = sys.argv[1:]
+    s3_folder = 'recipes'
+else:
+    photo_file, dest_fldr, region, s3_folder = sys.argv[1:]
+
+region = int(region)
 
 s3 = boto3.resource('s3', region_name='us-east-1',
-                   )
+                    )
 tofu = s3.Bucket('tofu.us-east-1')
 
 if photo_file.split('.')[1] == 'csv':    
@@ -48,15 +59,16 @@ elif photo_file.split('.')[1] == 'sql':
     cur.execute(query)
     photo_ls = cur.fetchall()
     photo_ls = [t[0] for t in photo_ls] #convert from tuples
+    photo_ls = [p for p in photo_ls if p] #drop NULLs
     db.close()
         
 else:
     print 'Bad file - please give either .csv list or .sql sql_query'
 
-def get_recipe_photo(key_list, region, dest_folder):
+def get_photo(key_list, region, dest_folder, s3_folder):
     for key in key_list:
         try:
-            tofu.download_file('{0:03d}_recipes/{1}/{1}.jpg'.format(region, key), 
+            tofu.download_file('{0:03d}_{2}/{1}/{1}.jpg'.format(region, key, s3_folder), 
                            '{0}/{1}.jpg'.format(dest_folder, key))
         except:
             import traceback
@@ -69,7 +81,7 @@ num_images = len(photo_ls)
     
 for i in range(nb_threads):
     id_range = photo_ls[i*num_images//nb_threads : (i+1)*num_images//nb_threads + 1]
-    thread = Thread(target=get_recipe_photo, args=(id_range,region,dest_fldr))
+    thread = Thread(target=get_photo, args=(id_range,region,dest_fldr, s3_folder))
     threads.append(thread)
     thread.start()
 
