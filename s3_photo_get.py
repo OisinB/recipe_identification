@@ -33,11 +33,12 @@ s3 = boto3.resource('s3', region_name='us-east-1',
                     )
 tofu = s3.Bucket('tofu.us-east-1')
 
-if photo_file.split('.')[1] == 'csv':    
+if photo_file.split('.')[1] == 'csv': 
     with open(photo_file, 'r') as f:
         photo_ls = f.read()
     
-    rows = photo_ls.split('\n')[1:] #skip header
+    photo_ls = photo_ls.split('\n')[1:] #skip header
+    photo_ls = [s.strip().split(',') for s in photo_ls]
     
 
 elif photo_file.split('.')[1] == 'sql':
@@ -63,6 +64,7 @@ else:
 def get_photo(tup_list, dest_folder, s3_folder):
     for tup in tup_list:
         region, key = tup
+        region = int(region)
         try:
             tofu.download_file('{0:03d}_{2}/{1}/{1}.jpg'.format(region, key, s3_folder), 
                            '{0}/{1}.jpg'.format(dest_folder, key))
