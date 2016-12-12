@@ -42,7 +42,10 @@ def prepare_images(sourceFolder, destinationFolder, imageQuality):
     if file:
       im = create_thumbnail(sourceFolder + '/' + file, 320)
       # im.save(destinationFolder + '/' + file, "JPEG", quality=imageQuality)
-      im.save(destinationFolder + '/' + file, "JPEG")
+    if file.endswith('.jpg'):
+        im.save(destinationFolder + '/' + file, "JPEG")
+    else:
+        im.save(destinationFolder + '/' + file + '.jpg', "JPEG")
 
       
 prepare_images(sys.argv[1], sys.argv[2], sys.argv[3])
